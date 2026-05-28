@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resign Letter Editor - Made with Ridwan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            50: '#e6f7ff', 100: '#b3e6ff', 200: '#80d5ff', 300: '#4dc4ff',
+                            400: '#1ab3ff', 500: '#0099e6', 600: '#0077b3', 700: '#005580',
+                            800: '#00334d', 900: '#001a26'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg: #e6f7ff; --fg: #00334d; --muted: #0077b3; --accent: #0099e6;
+            --card: #ffffff; --border: #80d5ff; --glow: rgba(0, 153, 230, 0.3);
+        }
+        
+        * { font-family: 'Poppins', sans-serif; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        body {
+            background: linear-gradient(135deg, #e6f7ff 0%, #b3e6ff 50%, #80d5ff 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 119, 179, 0.15);
+        }
+        
+        .input-field {
+            background: rgba(230, 247, 255, 0.8);
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--glow);
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0099e6 0%, #0077b3 100%);
+            box-shadow: 0 4px 15px rgba(0, 153, 230, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 153, 230, 0.5); }
+        .btn-primary:active { transform: translateY(0); }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #005580 0%, #00334d 100%);
+            box-shadow: 0 4px 15px rgba(0, 85, 128, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-download:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 85, 128, 0.5); }
+        .btn-download:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .letter-preview {
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 85, 128, 0.15);
+            font-family: 'Times New Roman', serif;
+            line-height: 1.8;
+        }
+        
+        .signature-img { max-width: 200px; max-height: 100px; object-fit: contain; }
+        
+        .floating-wave {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 150px;
+            pointer-events: none; z-index: 0;
+        }
+        
+        .wave {
+            position: absolute; bottom: 0; left: 0; width: 200%; height: 100%;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%230099e6' fill-opacity='0.2' d='M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,250.7C960,235,1056,181,1152,165.3C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") repeat-x;
+            animation: wave 15s linear infinite;
+        }
+        
+        .wave:nth-child(2) { bottom: 10px; opacity: 0.5; animation: wave 12s linear reverse infinite; }
+        
+        @keyframes wave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        
+        @media (prefers-reduced-motion: reduce) { .wave, .fade-in { animation: none; } }
+        
+        .tab-btn { transition: all 0.3s ease; }
+        .tab-btn.active { background: linear-gradient(135deg, #0099e6 0%, #0077b3 100%); color: white; }
+        
+        .loading-spinner {
+            border: 3px solid #e6f7ff; border-top: 3px solid #0099e6;
+            border-radius: 50%; width: 20px; height: 20px;
+            animation: spin 1s linear infinite; display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .notification {
+            position: fixed; top: 20px; right: 20px; padding: 16px 24px;
+            border-radius: 12px; color: white; font-weight: 500; z-index: 99999;
+            animation: slideIn 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .notification.success { background: linear-gradient(135deg, #10b981, #059669); }
+        .notification.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .notification.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="text-ocean-800">
+    <div class="floating-wave"><div class="wave"></div><div class="wave"></div></div>
+
+    <!-- Page 1: Welcome -->
+    <div id="page1" class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="glass-card rounded-3xl p-8 md:p-12 max-w-lg w-full fade-in">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h1 class="font-display text-3xl md:text-4xl font-bold text-ocean-700 mb-2" data-i18n="title">Resign Letter Editor</h1>
+                <p class="text-ocean-500" data-i18n="subtitle">Buat surat pengunduran diri profesional dengan mudah</p>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-ocean-600 mb-2" data-i18n="label_name">Nama Lengkap Anda</label>
+                    <input type="text" id="inputNama" 
+                           class="input-field w-full px-4 py-3 rounded-xl text-ocean-800 font-medium"
+                           data-i18n-placeholder="placeholder_name" placeholder="Masukkan nama lengkap Anda...">
+                </div>
+                
+                <button id="btnSubmit" 
+                        class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg flex items-center justify-center gap-2">
+                    <span data-i18n="btn_start">Mulai Buat Surat</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <div class="mb-4 flex justify-center gap-2">
+                    <button onclick="setLanguage('id')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-ocean-500 text-white">ID</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-white/50 text-ocean-600 hover:bg-ocean-100">EN</button>
+                    <button onclick="setLanguage('jp')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-white/50 text-ocean-600 hover:bg-ocean-100">JP</button>
+                </div>
+                <p class="text-ocean-400 text-sm">Made with Ridwan</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 2: Editor -->
+    <div id="page2" class="min-h-screen p-4 relative z-10 hidden">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="glass-card rounded-2xl p-6 mb-6 fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="font-display text-2xl md:text-3xl font-bold text-ocean-700">
+                            <span data-i18n="welcome">Welcome</span>, <span id="welcomeName" class="text-ocean-500"></span>
+                        </h1>
+                        <p class="text-ocean-500 mt-1" data-i18n="instruction">Silakan lengkapi data berikut untuk membuat surat</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="flex gap-2">
+                            <button onclick="setLanguage('id')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-ocean-500 text-white">ID</button>
+                            <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-white/50 text-ocean-600 hover:bg-ocean-100">EN</button>
+                            <button onclick="setLanguage('jp')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-white/50 text-ocean-600 hover:bg-ocean-100">JP</button>
+                        </div>
+                         <button id="btnBack" class="text-ocean-500 hover:text-ocean-700 flex items-center gap-2 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            <span data-i18n="btn_back">Kembali</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-6 fade-in stagger-1 overflow-x-auto pb-2">
+                <button class="tab-btn active px-6 py-3 rounded-xl font-semibold whitespace-nowrap" data-tab="editor" data-i18n="tab_editor">Editor Surat</button>
+                <button class="tab-btn px-6 py-3 rounded-xl font-semibold bg-white/50 text-ocean-600 whitespace-nowrap" data-tab="preview" data-i18n="tab_preview">Live Preview</button>
+                <button class="tab-btn px-6 py-3 rounded-xl font-semibold bg-white/50 text-ocean-600 whitespace-nowrap" data-tab="settings" data-i18n="tab_settings">Pengaturan Font</button>
+            </div>
+
+            <!-- Tab Content: Editor -->
+            <div id="tabEditor" class="tab-content fade-in stagger-2">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <!-- Form Inputs -->
+                    <div class="glass-card rounded-2xl p-6">
+                        <h2 class="font-semibold text-lg text-ocean-700 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            <span data-i18n="form_header">Data Surat</span>
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <!-- Inputs dengan atribut terjemahan -->
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_region">Nama Daerah</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="inputDaerah" class="input-field flex-1 px-4 py-2.5 rounded-xl" data-i18n-placeholder="placeholder_region" placeholder="Nama kota/daerah">
+                                    <button id="btnSyncLocation" class="btn-primary px-4 py-2.5 rounded-xl text-white flex items-center gap-1" title="Sync Location">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_date">Tanggal Hari Ini</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="inputTanggal" class="input-field flex-1 px-4 py-2.5 rounded-xl" data-i18n-placeholder="placeholder_date" placeholder="Tanggal lengkap">
+                                    <button id="btnSyncDate" class="btn-primary px-4 py-2.5 rounded-xl text-white flex items-center gap-1" title="Sync Date">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tambahan Kondisi Bapak/Ibu -->
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_title">Kondisi Bapak/Ibu</label>
+                                <select id="inputTitle" class="input-field w-full px-4 py-2.5 rounded-xl">
+                                    <option value="Bapak/Ibu">Bapak/Ibu</option>
+                                    <option value="Bapak">Bapak</option>
+                                    <option value="Ibu">Ibu</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_supervisor">Nama Atasan</label>
+                                <input type="text" id="inputAtasan" class="input-field w-full px-4 py-2.5 rounded-xl" data-i18n-placeholder="placeholder_supervisor" placeholder="Nama lengkap atasan">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_company">Nama Perusahaan</label>
+                                <input type="text" id="inputPT" class="input-field w-full px-4 py-2.5 rounded-xl" data-i18n-placeholder="placeholder_company" placeholder="Nama perusahaan">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_address">Alamat Perusahaan</label>
+                                <textarea id="inputAlamat" class="input-field w-full px-4 py-2.5 rounded-xl resize-none" rows="2" data-i18n-placeholder="placeholder_address" placeholder="Alamat lengkap perusahaan"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_position">Nama Jabatan</label>
+                                <input type="text" id="inputJabatan" class="input-field w-full px-4 py-2.5 rounded-xl" data-i18n-placeholder="placeholder_position" placeholder="Jabatan Anda">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_notice">Lama Notice (hari)</label>
+                                <input type="number" id="inputNotice" class="input-field w-full px-4 py-2.5 rounded-xl" placeholder="30" min="1">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_lastday">Tanggal Terakhir Kerja</label>
+                                <input type="text" id="inputTerakhir" class="input-field w-full px-4 py-2.5 rounded-xl" data-i18n-placeholder="placeholder_lastday" placeholder="Tanggal hari terakhir">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-ocean-600 mb-1" data-i18n="label_signature">Tanda Tangan (Upload)</label>
+                                <input type="file" id="inputTtd" accept="image/*" class="hidden">
+                                <button id="btnUploadTtd" class="input-field w-full px-4 py-2.5 rounded-xl text-left text-ocean-500 hover:border-ocean-400 transition-colors">
+                                    <span id="ttdFileName" data-i18n="btn_upload">Pilih file gambar...</span>
+                                </button>
+                                <div id="signaturePreviewContainer" class="mt-3 hidden">
+                                    <p class="text-xs text-ocean-500 mb-2">Preview:</p>
+                                    <div class="inline-block border border-ocean-200 rounded-lg p-2 bg-white">
+                                        <img id="signaturePreview" class="signature-img" alt="Signature">
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <label class="text-xs text-ocean-500">Width:</label>
+                                        <input type="range" id="signatureWidth" min="50" max="300" value="150" class="flex-1 h-2 bg-ocean-200 rounded-lg">
+                                        <span id="signatureWidthValue" class="text-xs text-ocean-600 w-12">150px</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Preview -->
+                    <div class="glass-card rounded-2xl p-6">
+                        <h2 class="font-semibold text-lg text-ocean-700 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            Quick Preview
+                        </h2>
+                        <div id="quickPreview" class="letter-preview rounded-xl p-6 text-sm overflow-auto max-h-[600px]"></div>
+                    </div>
+                </div>
+                
+                <!-- Download Buttons -->
+                <div class="glass-card rounded-2xl p-6 mt-6 fade-in stagger-3">
+                    <h2 class="font-semibold text-lg text-ocean-700 mb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span data-i18n="download_header">Download Surat (Auto Translate)</span>
+                    </h2>
+                    <p class="text-sm text-ocean-500 mb-4" data-i18n="download_desc">Klik tombol untuk menerjemahkan dan mengunduh surat secara otomatis.</p>
+                    <div class="grid sm:grid-cols-3 gap-4">
+                        <button id="btnDownloadID" class="btn-download py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span data-i18n="btn_dl_id">Download Word Indonesia</span>
+                        </button>
+                        <button id="btnDownloadEN" class="btn-download py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span data-i18n="btn_dl_en">Download Word English</span>
+                        </button>
+                        <button id="btnDownloadJP" class="btn-download py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span data-i18n="btn_dl_jp">Download Word Japan</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Preview -->
+            <div id="tabPreview" class="tab-content hidden fade-in">
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-semibold text-lg text-ocean-700 flex items-center gap-2">
+                            <span data-i18n="preview_header">Live Preview</span>
+                        </h2>
+                        <div class="flex gap-2">
+                            <button class="prev-lang-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-ocean-500 text-white" data-lang="id">ID</button>
+                            <button class="prev-lang-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-white/50 text-ocean-600" data-lang="en">EN</button>
+                            <button class="prev-lang-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-white/50 text-ocean-600" data-lang="jp">JP</button>
+                        </div>
+                    </div>
+                    <div id="fullPreview" class="letter-preview rounded-xl p-8 md:p-12 text-base leading-relaxed"></div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Settings -->
+            <div id="tabSettings" class="tab-content hidden fade-in">
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="font-semibold text-lg text-ocean-700 mb-6 flex items-center gap-2" data-i18n="settings_header">Pengaturan Font</h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-ocean-600 mb-2" data-i18n="settings_font_family">Jenis Font</label>
+                            <select id="fontFamily" class="input-field w-full px-4 py-2.5 rounded-xl">
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Arial">Arial</option>
+                                <option value="Calibri">Calibri</option>
+                                <option value="Georgia">Georgia</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-ocean-600 mb-2" data-i18n="settings_font_size">Ukuran Font</label>
+                            <div class="flex items-center gap-3">
+                                <input type="range" id="fontSize" min="10" max="16" value="12" class="flex-1 h-2 bg-ocean-200 rounded-lg appearance-none cursor-pointer">
+                                <span id="fontSizeValue" class="text-sm font-medium text-ocean-600 w-16 text-center">12 pt</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center py-6 mt-6">
+                <p class="text-ocean-500 font-medium">Made with Ridwan</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    
+    <script>
+        // ==========================================
+        // TRANSLATION DATA (UI)
+        // ==========================================
+        const uiTranslations = {
+            id: {
+                title: "Resign Letter Editor",
+                subtitle: "Buat surat pengunduran diri profesional dengan mudah",
+                label_name: "Nama Lengkap Anda",
+                placeholder_name: "Masukkan nama lengkap Anda...",
+                btn_start: "Mulai Buat Surat",
+                welcome: "Selamat Datang",
+                instruction: "Silakan lengkapi data berikut untuk membuat surat",
+                btn_back: "Kembali",
+                tab_editor: "Editor Surat",
+                tab_preview: "Live Preview",
+                tab_settings: "Pengaturan Font",
+                form_header: "Data Surat",
+                label_region: "Nama Daerah",
+                placeholder_region: "Nama kota/daerah",
+                label_date: "Tanggal Hari Ini",
+                placeholder_date: "Tanggal lengkap",
+                label_title: "Kondisi Bapak/Ibu",
+                label_supervisor: "Nama Atasan",
+                placeholder_supervisor: "Nama lengkap atasan",
+                label_company: "Nama Perusahaan",
+                placeholder_company: "Nama perusahaan",
+                label_address: "Alamat Perusahaan",
+                placeholder_address: "Alamat lengkap perusahaan",
+                label_position: "Nama Jabatan",
+                placeholder_position: "Jabatan Anda",
+                label_notice: "Lama Notice (hari)",
+                label_lastday: "Tanggal Terakhir Kerja",
+                placeholder_lastday: "Tanggal hari terakhir",
+                label_signature: "Tanda Tangan (Upload)",
+                btn_upload: "Pilih file gambar...",
+                download_header: "Download Surat (Auto Translate)",
+                download_desc: "Klik tombol untuk menerjemahkan dan mengunduh surat secara otomatis.",
+                btn_dl_id: "Download Word Indonesia",
+                btn_dl_en: "Download Word English",
+                btn_dl_jp: "Download Word Japan",
+                preview_header: "Live Preview - Surat Resign",
+                settings_header: "Pengaturan Font",
+                settings_font_family: "Jenis Font",
+                settings_font_size: "Ukuran Font"
+            },
+            en: {
+                title: "Resign Letter Editor",
+                subtitle: "Create a professional resignation letter easily",
+                label_name: "Your Full Name",
+                placeholder_name: "Enter your full name...",
+                btn_start: "Start Creating Letter",
+                welcome: "Welcome",
+                instruction: "Please complete the data below to create the letter",
+                btn_back: "Back",
+                tab_editor: "Letter Editor",
+                tab_preview: "Live Preview",
+                tab_settings: "Font Settings",
+                form_header: "Letter Data",
+                label_region: "Region Name",
+                placeholder_region: "City/Region name",
+                label_date: "Today's Date",
+                placeholder_date: "Full date",
+                label_title: "Mr./Mrs. Condition",
+                label_supervisor: "Supervisor Name",
+                placeholder_supervisor: "Supervisor's full name",
+                label_company: "Company Name",
+                placeholder_company: "Company name",
+                label_address: "Company Address",
+                placeholder_address: "Full company address",
+                label_position: "Job Title",
+                placeholder_position: "Your position",
+                label_notice: "Notice Period (days)",
+                label_lastday: "Last Working Day",
+                placeholder_lastday: "Last working day date",
+                label_signature: "Signature (Upload)",
+                btn_upload: "Choose image file...",
+                download_header: "Download Letter (Auto Translate)",
+                download_desc: "Click button to translate and download the letter automatically.",
+                btn_dl_id: "Download Word Indonesian",
+                btn_dl_en: "Download Word English",
+                btn_dl_jp: "Download Word Japanese",
+                preview_header: "Live Preview - Resign Letter",
+                settings_header: "Font Settings",
+                settings_font_family: "Font Family",
+                settings_font_size: "Font Size"
+            },
+            jp: {
+                title: "退職届エディター",
+                subtitle: "プロフェッショナルな退職届を簡単に作成",
+                label_name: "氏名",
+                placeholder_name: "氏名を入力してください...",
+                btn_start: "作成を開始",
+                welcome: "ようこそ",
+                instruction: "レターを作成するには以下のデータを入力してください",
+                btn_back: "戻る",
+                tab_editor: "レターエディタ",
+                tab_preview: "ライブプレビュー",
+                tab_settings: "フォント設定",
+                form_header: "レターデータ",
+                label_region: "地域名",
+                placeholder_region: "都市/地域名",
+                label_date: "今日の日付",
+                placeholder_date: "完全な日付",
+                label_title: "Mr./Mrs. 状態",
+                label_supervisor: "上司の名前",
+                placeholder_supervisor: "上司の氏名",
+                label_company: "会社名",
+                placeholder_company: "会社名",
+                label_address: "会社住所",
+                placeholder_address: "会社の完全な住所",
+                label_position: "職位",
+                placeholder_position: "あなたの役職",
+                label_notice: "通知期間（日）",
+                label_lastday: "最終勤務日",
+                placeholder_lastday: "最終勤務日",
+                label_signature: "署名（アップロード）",
+                btn_upload: "画像ファイルを選択...",
+                download_header: "レターをダウンロード（自動翻訳）",
+                download_desc: "ボタンをクリックして自動的に翻訳・ダウンロードします。",
+                btn_dl_id: "Word版をダウンロード (インドネシア語)",
+                btn_dl_en: "Word版をダウンロード (英語)",
+                btn_dl_jp: "Word版をダウンロード (日本語)",
+                preview_header: "ライブプレビュー - 退職届",
+                settings_header: "フォント設定",
+                settings_font_family: "フォントファミリー",
+                settings_font_size: "フォントサイズ"
+            }
+        };
+
+        // ==========================================
+        // LETTER TEMPLATES (Content)
+        // ==========================================
+        const letterTemplates = {
+            id: {
+                header: "{daerah}, {tanggal}",
+                to: "Kepada Yth.,",
+                dear: "{title} {atasan}",
+                company: "{pt}",
+                address: "{alamat}",
+                greeting: "Dengan hormat,",
+                body1: "Melalui surat ini, saya, {nama}, yang bekerja sebagai {jabatan} di {pt}, bermaksud untuk menyampaikan pengunduran diri saya terhitung {notice} hari sejak tanggal surat ini, sehingga hari kerja terakhir saya adalah pada {terakhir}.",
+                body2: "Keputusan ini saya ambil setelah mempertimbangkan dengan matang demi perkembangan karier dan tujuan pribadi saya di masa mendatang. Saya sangat menghargai kesempatan, pengalaman, serta ilmu yang telah saya peroleh selama bekerja di {pt}.",
+                body3: "Saya berkomitmen untuk tetap menyelesaikan seluruh pekerjaan yang menjadi tanggung jawab saya, serta membantu proses transisi agar pekerjaan dapat berjalan lancar hingga hari terakhir saya bekerja.",
+                closing: "Demikian surat pengunduran diri ini saya buat dengan penuh kesadaran dan tanpa paksaan dari pihak mana pun. Atas segala dukungan dan kerja sama yang telah terjalin, saya mengucapkan terima kasih.",
+                regards: "Hormat saya,",
+                name: "{nama}"
+            },
+            en: {
+                header: "{daerah}, {tanggal}",
+                to: "To,",
+                dear: "{title} {atasan}",
+                company: "{pt}",
+                address: "{alamat}",
+                greeting: "Dear Sir/Madam,",
+                body1: "Through this letter, I, {nama}, working as {jabatan} at {pt}, intend to submit my resignation effective {notice} days from the date of this letter, so my last working day will be on {terakhir}.",
+                body2: "This decision was made after careful consideration for my career development and personal goals in the future. I greatly appreciate the opportunities, experiences, and knowledge I have gained while working at {pt}.",
+                body3: "I am committed to completing all my responsibilities and assisting in the transition process to ensure smooth operations until my last working day.",
+                closing: "This resignation letter is made with full awareness and without any coercion from any party. I would like to express my gratitude for all the support and cooperation.",
+                regards: "Sincerely,",
+                name: "{nama}"
+            },
+            jp: {
+                header: "{daerah}, {tanggal}",
+                to: "拝啓",
+                dear: "{title} {atasan}",
+                company: "{pt}",
+                address: "{alamat}",
+                greeting: "拝啓",
+                body1: "この手紙を通じて、{pt}で{jabatan}として勤務しております{nama}は、本書簡の日付から{notice}日後に退職を申し出ることをお知らせいたします。したがって、最終勤務日は{terakhir}となります。",
+                body2: "この決定は、将来のキャリア発展と個人的な目標のために慎重に検討した結果です。{pt}で勤務中に得た機会、経験、知識に深く感謝しております。",
+                body3: "最終勤務日まで、すべての責任を果たし、業務が円滑に進むよう移行プロセスを支援することをお約束いたします。",
+                closing: "本退職届は完全な自覚の下、いかなる強制もなく作成されました。これまでのサポートとご協力に心より感謝申し上げます。",
+                regards: "敬具",
+                name: "{nama}"
+            }
+        };
+
+        // ==========================================
+        // STATE & CONFIG
+        // ==========================================
+        let currentLang = 'id';
+        let currentPreviewLang = 'id';
+
+        const state = {
+            nama: '',
+            daerah: '',
+            tanggal: '',
+            title: 'Bapak/Ibu',
+            atasan: '',
+            pt: '',
+            alamat: '',
+            jabatan: '',
+            notice: '',
+            terakhir: '',
+            signatureData: null,
+            signatureWidth: 150,
+            signatureHeight: 75,
+            fontSettings: { family: 'Times New Roman', size: 12, bold: false, italic: false, underline: false, lineSpacing: 1.5 }
+        };
+
+        // ==========================================
+        // DOM ELEMENTS
+        // ==========================================
+        const el = {
+            page1: document.getElementById('page1'),
+            page2: document.getElementById('page2'),
+            inputNama: document.getElementById('inputNama'),
+            btnSubmit: document.getElementById('btnSubmit'),
+            btnBack: document.getElementById('btnBack'),
+            welcomeName: document.getElementById('welcomeName'),
+            inputs: {
+                daerah: document.getElementById('inputDaerah'),
+                tanggal: document.getElementById('inputTanggal'),
+                title: document.getElementById('inputTitle'),
+                atasan: document.getElementById('inputAtasan'),
+                pt: document.getElementById('inputPT'),
+                alamat: document.getElementById('inputAlamat'),
+                jabatan: document.getElementById('inputJabatan'),
+                notice: document.getElementById('inputNotice'),
+                terakhir: document.getElementById('inputTerakhir'),
+                ttd: document.getElementById('inputTtd')
+            },
+            btnUploadTtd: document.getElementById('btnUploadTtd'),
+            ttdFileName: document.getElementById('ttdFileName'),
+            signaturePreviewContainer: document.getElementById('signaturePreviewContainer'),
+            signaturePreview: document.getElementById('signaturePreview'),
+            signatureWidth: document.getElementById('signatureWidth'),
+            signatureWidthValue: document.getElementById('signatureWidthValue'),
+            btnSyncLocation: document.getElementById('btnSyncLocation'),
+            btnSyncDate: document.getElementById('btnSyncDate'),
+            quickPreview: document.getElementById('quickPreview'),
+            fullPreview: document.getElementById('fullPreview'),
+            btnDownloadID: document.getElementById('btnDownloadID'),
+            btnDownloadEN: document.getElementById('btnDownloadEN'),
+            btnDownloadJP: document.getElementById('btnDownloadJP'),
+            fontFamily: document.getElementById('fontFamily'),
+            fontSize: document.getElementById('fontSize'),
+            fontSizeValue: document.getElementById('fontSizeValue')
+        };
+
+        // ==========================================
+        // CORE FUNCTIONS
+        // ==========================================
+
+        // 1. UI Translation System
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('appLang', lang);
+            
+            // Update active button style
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('bg-ocean-500', 'text-white');
+                btn.classList.add('bg-white/50', 'text-ocean-600');
+            });
+            document.querySelectorAll(`.lang-btn:nth-child(${lang === 'id' ? 1 : lang === 'en' ? 2 : 3})`).forEach(btn => {
+                btn.classList.add('bg-ocean-500', 'text-white');
+                btn.classList.remove('bg-white/50', 'text-ocean-600');
+            });
+
+            // Apply translations
+            const t = uiTranslations[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+
+            // Update Select Options Translation
+            const titleOptions = el.inputs.title.options;
+            if (lang === 'id') {
+                titleOptions[0].text = "Bapak/Ibu";
+                titleOptions[1].text = "Bapak";
+                titleOptions[2].text = "Ibu";
+            } else if (lang === 'en') {
+                titleOptions[0].text = "Mr./Mrs.";
+                titleOptions[1].text = "Mr.";
+                titleOptions[2].text = "Mrs.";
+            } else if (lang === 'jp') {
+                titleOptions[0].text = "Mr./Mrs.";
+                titleOptions[1].text = "Mr.";
+                titleOptions[2].text = "Mrs.";
+            }
+
+            // Re-render preview to match potential language change (optional, mostly for UI consistency)
+            updatePreview();
+        }
+
+        // 2. Notification
+        function showNotification(message, type = 'info') {
+            const n = document.createElement('div');
+            n.className = `notification ${type}`;
+            n.textContent = message;
+            document.body.appendChild(n);
+            setTimeout(() => {
+                n.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => n.remove(), 300);
+            }, 3000);
+        }
+
+        // 3. Format Date
+        function formatDate(date) {
+            const months = {
+                id: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
+                en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                jp: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+            };
+            const m = months[currentLang] || months.id;
+            return `${date.getDate()} ${m[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        // 4. Content Translation API
+        async function translateText(text, targetLang) {
+            if (!text || targetLang === 'id') return text;
+            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=id|${targetLang}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.responseStatus === 200) return data.responseData.translatedText;
+                return text;
+            } catch (e) {
+                console.error(e);
+                return text;
+            }
+        }
+
+        // 5. Generate HTML for Preview
+        function generateLetterHTML(lang, fields) {
+            const t = letterTemplates[lang];
+            const s = state.fontSettings;
+            
+            const replace = (str) => str
+                .replace('{daerah}', fields.daerah || '[DAERAH]')
+                .replace('{tanggal}', fields.tanggal || '[TANGGAL]')
+                .replace('{title}', fields.title || '[TITLE]')
+                .replace('{atasan}', fields.atasan || '[ATASAN]')
+                .replace('{pt}', fields.pt || '[PT]')
+                .replace('{alamat}', fields.alamat || '[ALAMAT]')
+                .replace('{nama}', fields.nama || '[NAMA]')
+                .replace('{jabatan}', fields.jabatan || '[JABATAN]')
+                .replace('{notice}', fields.notice || '[NOTICE]')
+                .replace('{terakhir}', fields.terakhir || '[TERAKHIR]');
+
+            let sig = state.signatureData ? `<img src="${state.signatureData}" style="max-width:${state.signatureWidth}px; max-height:${state.signatureHeight}px;">` : '';
+            
+            return `
+                <div style="font-family:'${s.family}'; font-size:${s.size}pt; line-height:1.6; padding:20px;">
+                    <p style="text-align:right; margin-bottom:30px;">${replace(t.header)}</p>
+                    <p style="margin-bottom:5px;">${t.to}</p>
+                    <p style="margin-bottom:2px;">${replace(t.dear)}</p>
+                    <p style="margin-bottom:2px;">${replace(t.company)}</p>
+                    <p style="margin-bottom:30px;">${replace(t.address)}</p>
+                    <p style="margin-bottom:20px;">${t.greeting}</p>
+                    <p style="text-align:justify; margin-bottom:15px;">${replace(t.body1)}</p>
+                    <p style="text-align:justify; margin-bottom:15px;">${replace(t.body2)}</p>
+                    <p style="text-align:justify; margin-bottom:20px;">${replace(t.body3)}</p>
+                    <p style="text-align:justify; margin-bottom:40px;">${t.closing}</p>
+                    <p style="margin-bottom:60px;">${t.regards}</p>
+                    <div style="margin-bottom:10px;">${sig || '<span style="color:#ccc;">[TTD]</span>'}</div>
+                    <p><strong>${replace(t.name)}</strong></p>
+                </div>
+            `;
+        }
+
+        function updatePreview() {
+            // Preview always shows data in current UI language or selected preview lang
+            el.quickPreview.innerHTML = generateLetterHTML(currentLang, state);
+            el.fullPreview.innerHTML = generateLetterHTML(currentPreviewLang, state);
+        }
+
+        // 6. Word Generation
+        async function generateWord(lang) {
+            if (typeof docx === 'undefined') { showNotification('Library error. Refresh page.', 'error'); return; }
+
+            showNotification('Processing...', 'info');
+            
+            // Translate dynamic fields if target is not ID
+            let fields = { ...state };
+            if (lang !== 'id') {
+                showNotification(`Translating to ${lang.toUpperCase()}...`, 'info');
+                fields.daerah = await translateText(state.daerah, lang);
+                fields.alamat = await translateText(state.alamat, lang);
+                fields.jabatan = await translateText(state.jabatan, lang);
+                
+                // Translate Title Selection based on language logic
+                if (lang === 'en') {
+                    if (fields.title === 'Bapak') fields.title = 'Mr.';
+                    else if (fields.title === 'Ibu') fields.title = 'Mrs.';
+                    else fields.title = 'Mr./Mrs.';
+                } else if (lang === 'jp') {
+                    if (fields.title === 'Bapak') fields.title = 'Mr.';
+                    else if (fields.title === 'Ibu') fields.title = 'Mrs.';
+                    else fields.title = 'Mr./Mrs.';
+                }
+                // Names and dates are usually kept or user inputs them in target lang
+            }
+
+            try {
+                const { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, convertInchesToTwip } = docx;
+                const t = letterTemplates[lang];
+                const s = state.fontSettings;
+
+                const createRun = (text, opts = {}) => new TextRun({
+                    text: text,
+                    font: s.family,
+                    size: s.size * 2,
+                    bold: opts.bold
+                });
+
+                const replace = (str) => str
+                    .replace('{daerah}', fields.daerah || '')
+                    .replace('{tanggal}', fields.tanggal || '')
+                    .replace('{title}', fields.title || '')
+                    .replace('{atasan}', fields.atasan || '')
+                    .replace('{pt}', fields.pt || '')
+                    .replace('{alamat}', fields.alamat || '')
+                    .replace('{nama}', fields.nama || '')
+                    .replace('{jabatan}', fields.jabatan || '')
+                    .replace('{notice}', fields.notice || '')
+                    .replace('{terakhir}', fields.terakhir || '');
+
+                const children = [
+                    new Paragraph({ alignment: AlignmentType.RIGHT, children: [createRun(replace(t.header))], spacing: { after: 400 } }),
+                    new Paragraph({ children: [createRun(t.to)], spacing: { after: 100 } }),
+                    new Paragraph({ children: [createRun(replace(t.dear))], spacing: { after: 50 } }),
+                    new Paragraph({ children: [createRun(replace(t.company))], spacing: { after: 50 } }),
+                    new Paragraph({ children: [createRun(replace(t.address))], spacing: { after: 400 } }),
+                    new Paragraph({ children: [createRun(t.greeting)], spacing: { after: 300 } }),
+                    new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [createRun(replace(t.body1))], spacing: { after: 200 } }),
+                    new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [createRun(replace(t.body2))], spacing: { after: 200 } }),
+                    new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [createRun(replace(t.body3))], spacing: { after: 200 } }),
+                    new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [createRun(t.closing)], spacing: { after: 500 } }),
+                    new Paragraph({ children: [createRun(t.regards)], spacing: { after: 800 } })
+                ];
+
+                // Signature
+                if (state.signatureData) {
+                    try {
+                        const base64 = state.signatureData.split(',')[1];
+                        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+                        children.push(new Paragraph({
+                            children: [new ImageRun({ data: bytes, transformation: { width: state.signatureWidth, height: state.signatureHeight }, type: 'png' })],
+                            spacing: { after: 100 }
+                        }));
+                    } catch (e) { console.error(e); }
+                }
+
+                children.push(new Paragraph({ children: [createRun(replace(t.name), { bold: true })] }));
+
+                const doc = new Document({
+                    sections: [{ properties: { page: { margin: { top: convertInchesToTwip(1), right: convertInchesToTwip(1), bottom: convertInchesToTwip(1), left: convertInchesToTwip(1) } } }, children }]
+                });
+
+                const blob = await Packer.toBlob(doc);
+                saveAs(blob, `Resign_Letter_${fields.nama.replace(/\s/g, '_')}_${lang.toUpperCase()}.docx`);
+                showNotification('Download successful!', 'success');
+
+            } catch (e) {
+                console.error(e);
+                showNotification('Error creating document', 'error');
+            }
+        }
+
+        // ==========================================
+        // EVENT LISTENERS
+        // ==========================================
+
+        // Navigation
+        el.btnSubmit.addEventListener('click', () => {
+            if (!el.inputNama.value.trim()) {
+                showNotification(uiTranslations[currentLang].placeholder_name, 'error');
+                return;
+            }
+            state.nama = el.inputNama.value.trim();
+            el.welcomeName.textContent = state.nama;
+            el.page1.classList.add('hidden');
+            el.page2.classList.remove('hidden');
+            syncDate(); // Auto sync date
+            updatePreview();
+        });
+
+        el.btnBack.addEventListener('click', () => {
+            el.page2.classList.add('hidden');
+            el.page1.classList.remove('hidden');
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.add('bg-white/50'); });
+                btn.classList.add('active'); btn.classList.remove('bg-white/50');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1)).classList.remove('hidden');
+            });
+        });
+
+        // Preview Language Switcher
+        document.querySelectorAll('.prev-lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.prev-lang-btn').forEach(b => { b.classList.remove('bg-ocean-500', 'text-white'); b.classList.add('bg-white/50'); });
+                btn.classList.add('bg-ocean-500', 'text-white'); btn.classList.remove('bg-white/50');
+                currentPreviewLang = btn.dataset.lang;
+                updatePreview();
+            });
+        });
+
+        // Inputs Sync
+        Object.keys(el.inputs).forEach(key => {
+            if (key === 'ttd') return;
+            el.inputs[key].addEventListener('input', () => {
+                state[key] = el.inputs[key].value;
+                updatePreview();
+            });
+            // Menambahkan listener 'change' untuk select dropdown agar state selalu update
+            el.inputs[key].addEventListener('change', () => {
+                state[key] = el.inputs[key].value;
+                updatePreview();
+            });
+        });
+
+        // Location
+        el.btnSyncLocation.addEventListener('click', async () => {
+            try {
+                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+                const data = await res.json();
+                const loc = data.address.city || data.address.town || data.address.village || '';
+                state.daerah = loc;
+                el.inputs.daerah.value = loc;
+                updatePreview();
+                showNotification('Location synced', 'success');
+            } catch (e) {
+                showNotification('Location access denied', 'error');
+            }
+        });
+
+        // Date
+        function syncDate() {
+            state.tanggal = formatDate(new Date());
+            el.inputs.tanggal.value = state.tanggal;
+            updatePreview();
+        }
+        el.btnSyncDate.addEventListener('click', syncDate);
+
+        // Signature
+        el.btnUploadTtd.addEventListener('click', () => el.inputs.ttd.click());
+        el.inputs.ttd.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                state.signatureData = ev.target.result;
+                el.signaturePreview.src = ev.target.result;
+                el.signaturePreviewContainer.classList.remove('hidden');
+                el.ttdFileName.textContent = file.name;
+                const img = new Image();
+                img.onload = () => { state.signatureHeight = Math.round(state.signatureWidth * (img.height / img.width)); updatePreview(); };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        el.signatureWidth.addEventListener('input', (e) => {
+            state.signatureWidth = parseInt(e.target.value);
+            el.signatureWidthValue.textContent = `${e.target.value}px`;
+            if (state.signatureData) {
+                // simple aspect ratio fix
+                state.signatureHeight = Math.round(state.signatureWidth * 0.5);
+            }
+            updatePreview();
+        });
+
+        // Downloads
+        el.btnDownloadID.addEventListener('click', () => generateWord('id'));
+        el.btnDownloadEN.addEventListener('click', () => generateWord('en'));
+        el.btnDownloadJP.addEventListener('click', () => generateWord('jp'));
+
+        // Font Settings
+        el.fontFamily.addEventListener('change', (e) => { state.fontSettings.family = e.target.value; updatePreview(); });
+        el.fontSize.addEventListener('input', (e) => { state.fontSettings.size = parseInt(e.target.value); el.fontSizeValue.textContent = `${e.target.value} pt`; updatePreview(); });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('appLang') || 'id';
+            setLanguage(savedLang);
+            updatePreview();
+        });
+
+    </script>
+</body>
+</html>
